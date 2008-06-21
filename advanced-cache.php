@@ -15,6 +15,8 @@ $batcache_ok_filenames = array(); // Script filenames that may be batcached when
 
 $batcache_unique = array(); // If you conditionally serve different content, put the variable values here.
 
+$batcache_headers = array(); // Add headers here. These will be sent with every response from the cache.
+
 /* For example, if your documents have a mobile variant (a different document served by the same URL) you must tell batcache about the variance. Otherwise you might accidentally cache the mobile version and serve it to desktop users, or vice versa.
 $batcache_unique['mobile'] = is_mobile_user_agent();
 */
@@ -37,11 +39,7 @@ if ( include_once( 'plugins/searchterm-highlighter.php') && referrer_has_search_
 */
 
 function batcache() {
-	global $batcache_key, $batcache_group, $batcache_max_age, $batcache_times, $batcache_seconds, $batcache_ok_filenames, $batcache_remote, $batcache_unique;
-
-	// Never batcache when run from CLI
-	if ( !empty( $_SERVER[ 'argv' ] ) )
-		return;
+	global $batcache_key, $batcache_group, $batcache_url_key, $batcache_url_version, $batcache_max_age, $batcache_times, $batcache_seconds, $batcache_ok_filenames, $batcache_remote, $batcache_unique;
 
 	// Never batcache when POST data is present
 	if ( !empty( $HTTP_RAW_POST_DATA ) )
@@ -55,10 +53,6 @@ function batcache() {
 
 	// HTTP POST
 	if ( !empty($_POST) )
-		return;
-
-	// HTTP GET, with a whitelist of script filenames that should be batcached with GET query vars
-	if ( !empty($_GET) && ( !is_array($batcache_ok_filenames) || !in_array(basename($_SERVER['SCRIPT_NAME']), $batcache_ok_filenames) ) )
 		return;
 
 	// Cookied users and previous commenters
@@ -79,11 +73,13 @@ function batcache() {
 	// If your blog shows logged-in pages after you log out, uncomment this. (Typical CDN issue.)
 	// header('Vary: Cookie');
 
-	// Things that define a unique page. You must 
+	// Things that define a unique page.
+	if ( isset( $_SERVER['QUERY_STRING'] ) )
+		parse_str($_SERVER['QUERY_STRING'], $query);
 	$keys = array(
 		'host' => $_SERVER['HTTP_HOST'],
-		'path' => $_SERVER['REQUEST_URI'],
-		'query' => $_SERVER['QUERY_STRING'],
+		'path' => ( $pos = strpos($_SERVER['REQUEST_URI'], '?') ) ? substr($_SERVER['REQUEST_URI'], 0, $pos) : $_SERVER['REQUEST_URI'],
+		'query' => $query,
 		'extra' => $batcache_unique
 	);
 
@@ -100,6 +96,11 @@ function batcache() {
 	// Generate the batcache key
 	$batcache_key = md5(serialize($keys));
 
+	// Recreate the permalink from the URL
+	$permalink = 'http://' . $keys['host'] . $keys['path'] . ( isset($keys['query']['p']) ? "?p=" . $keys['query']['p'] : '' );
+	$batcache_url_key = md5($permalink);
+	$batcache_url_version = wp_cache_get("{$batcache_url_key}_version", $batcache_group);
+
 	// Get the batcache
 	$batcache = wp_cache_get($batcache_key, $batcache_group);
 
@@ -109,28 +110,17 @@ function batcache() {
 	} else {
 		// No batcache item found, or ready to sample traffic again at the end of the batcache life?
 		if ( !is_array($batcache) || time() >= $batcache['time'] + $batcache_max_age - $batcache_seconds ) {
-			// incr returns the new value, or null if the key doesn't exist
+			wp_cache_add($batcache_req_key, 0, $batcache_group);
 			$requests = wp_cache_incr($batcache_req_key, 1, $batcache_group);
 
-			// First time this interval?
-			if ( $requests == null ) {
-				wp_cache_set($batcache_req_key, 1, $batcache_group, $batcache_seconds);
-				$do_batcache = false;
-			}
-
-			// Minimum condition met?
-			elseif ( $requests >= $batcache_times ) {
+			if ( $requests >= $batcache_times )
 				$do_batcache = true;
-			}
-
-			// Minimum condition not met.
-			else {
+			else
 				$do_batcache = false;
-			}
 		}
 	}
 
-	// Defined here because timer_stop() calls number_format_i18n(), which might not be defined when we need it (sunrise, SHORTINIT)
+	// Defined here because timer_stop() calls number_format_i18n()
 	function batcache_timer_stop($display = 0, $precision = 3) {
 		global $timestart, $timeend;
 		$mtime = microtime();
@@ -144,8 +134,16 @@ function batcache() {
 		return $r;
 	}
 
+	// If the document has been updated and we are the first to notice, update it.
+	if ( isset($batcache['version']) && $batcache['version'] != $batcache_url_version ) {
+		wp_cache_add("{$batcache_url_key}_genlock", 0, $batcache_group);
+		$gen_lock = wp_cache_incr("{$batcache_url_key}_genlock", 1, $batcache_group);
+		if ( !isset( $do_batcache ) )
+			$do_batcache = true;
+	}
+
 	// Did we find a batcached page that hasn't expired?
-	if ( isset($batcache['time']) && time() < $batcache['time'] + $batcache_max_age ) {
+	if ( isset($batcache['time']) && $gen_lock != 1 && time() < $batcache['time'] + $batcache_max_age ) {
 		// 304 Not Modified
 		if ( isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ) {
 			$since = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
@@ -164,7 +162,10 @@ function batcache() {
 		$output = substr($batcache['output'], 0, $tag_position) . $tag . substr($batcache['output'], $tag_position);
 
 		if ( !empty($batcache['headers']) ) foreach ( $batcache['headers'] as $k => $v )
-			header("$k: $v");
+			header("$k: $v", 1);
+
+		if ( !empty($batcache_headers) ) foreach ( $batcache_headers as $k => $v )
+			header("$k: $v", 1);
 
 		// Have you ever heard a death rattle before?
 		die($output);
@@ -175,14 +176,7 @@ function batcache() {
 		return;
 
 	function batcache_ob($output) {
-		global $batcache_key, $batcache_group, $batcache_max_age;
-
-		// Configure the memcached client again because it can get clobbered
-		if ( !$batcache_remote )
-			if ( function_exists('wp_cache_add_no_remote_groups') )
-				wp_cache_add_no_remote_groups(array($batcache_group));
-		if ( function_exists('wp_cache_add_global_groups') )
-			wp_cache_add_global_groups(array($batcache_group));
+		global $batcache_key, $batcache_group, $batcache_url_key, $batcache_url_version, $batcache_max_age;
 
 		// Do not batcache blank pages (usually they are HTTP redirects)
 		$output = trim($output);
@@ -194,13 +188,18 @@ function batcache() {
 			'output' => $output,
 			'time' => time(),
 			'timer' => batcache_timer_stop(false, 3),
-			'headers' => apache_response_headers()
+			'headers' => apache_response_headers(),
+			'version' => $batcache_url_version
 		);
-		header('Last-Modified: ' . date('r', $batcache['time']), 1, 200);
 		wp_cache_set($batcache_key, $batcache, $batcache_group, $batcache_max_age + $batcache_seconds + 30);
 
+		// Unlock regeneration
+		wp_cache_delete("{$batcache_url_key}_genlock", $batcache_group);
+
+		header('Last-Modified: ' . date('r', $batcache['time']), 1);
+
 		// Add some debug info just before </head>
-		$tag = "<!--\n\tgenerated in " . $batcache['timer'] . " seconds\n\t" . strlen(serialize($batcache)) . " bytes batcached for " . $batcache_max_age . " seconds\n-->\n";
+		$tag = "<!--\n\tgenerated in " . $batcache['timer'] . " seconds\n\t" . strlen(serialize($batcache)) . " bytes batcached for " . $batcache_max_age . " seconds\n\t$batcache_url_version\n-->\n";
 		$tag_position = strpos($output, '</head>');
 		$output = substr($output, 0, $tag_position) . $tag . substr($output, $tag_position);
 
