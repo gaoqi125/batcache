@@ -36,6 +36,8 @@ Possible future features:
 
 1. Tweak the options near the top of `advanced-cache.php`
 
+1. *Optional* Upload `batcache.php` to the `/wp-content/plugins/` directory.
+
 = Memcached backend =
 
 1. Install [memcached](http://danga.com/memcached) on at least one server. Note the connection info. The default is `127.0.0.1:11211`.
