@@ -1,4 +1,4 @@
-=== Plugin Name ===
+=== Batcache ===
 Contributors: andy
 Tags: cache, memcached, speed, performance, digg
 Requires at least: 2.0
@@ -32,7 +32,7 @@ Possible future features:
 
 `define('WP_CACHE', true);`
 
-1. Test by reloading a page in your browser several times and then viewing the source. Just above </head> you should see some Batcache stats.
+1. Test by reloading a page in your browser several times and then viewing the source. Just above the `</head>` closing tag you should see some Batcache stats.
 
 1. Tweak the options near the top of `advanced-cache.php`
 
@@ -40,7 +40,7 @@ Possible future features:
 
 1. Install [memcached](http://danga.com/memcached) on at least one server. Note the connection info. The default is `127.0.0.1:11211`.
 
-1. Install the [PECL memcached module](http://pecl.php.net/package/memcache) and [Ryan's Memcached backend 2.0](http://svn.wp-plugins.org/memcached/trunk/). Use the [1.0 branch](http://svn.wp-plugins.org/memcached/branches/1.0/) if you don't have or can't install the PECL module.
+1. Install the [PECL memcached extension](http://pecl.php.net/package/memcache) and [Ryan's Memcached backend 2.0](http://svn.wp-plugins.org/memcached/trunk/). Use the [1.0 branch](http://svn.wp-plugins.org/memcached/branches/1.0/) if you don't have or can't install the PECL extension.
 
 == Frequently Asked Questions ==
 
