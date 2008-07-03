@@ -1,6 +1,4 @@
 <?php
-//error_reporting(E_ALL ^ E_NOTICE);
-//ini_set('show_errors', 'on');
 
 // nananananananananananananananana BATCACHE!!!
 
@@ -102,13 +100,13 @@ if ( strstr( $_SERVER['SCRIPT_FILENAME'], 'wp-includes/js' ) )
 // Never batcache when POST data is present.
 if ( ! empty( $GLOBALS['HTTP_RAW_POST_DATA'] ) || ! empty( $_POST ) )
 	return;
-/*
+
 // Never batcache when cookies indicate a cache-exempt visitor.
 if ( is_array( $_COOKIE) && ! empty( $_COOKIE ) )
 	foreach ( array_keys( $_COOKIE ) as $batcache->cookie )
 		if ( substr( $batcache->cookie, 0, 9 ) == 'wordpress' || substr( $batcache->cookie, 0, 14 ) == 'comment_author' )
 			return;
-*/
+
 if ( ! include_once( ABSPATH . 'wp-content/object-cache.php' ) )
 	return;
 
