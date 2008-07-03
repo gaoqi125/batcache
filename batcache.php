@@ -8,20 +8,10 @@ Author URI: http://andyskelton.com/
 */
 
 // Do not load if our advanced-cache.php isn't loaded
-if ( ! function_exists('batcache') )
+if ( ! is_object($batcache) || ! method_exists( $wp_object_cache, 'incr' ) )
 	return;
 
-add_action('init', 'batcache_init');
-
-function batcache_init() {
-	global $batcache_remote, $batcache_group;
-
-	if ( !$batcache_remote )
-		if ( function_exists('wp_cache_add_no_remote_groups') )
-			wp_cache_add_no_remote_groups(array($batcache_group));
-	if ( function_exists('wp_cache_add_global_groups') )
-		wp_cache_add_global_groups(array($batcache_group));
-}
+$batcache->configure_groups();
 
 // Regen home and permalink on posts and pages
 add_action('clean_post_cache', 'batcache_post');
@@ -32,7 +22,7 @@ add_action('clean_post_cache', 'batcache_post');
 //add_action('edit_comment',          'batcache_comment');
 
 function batcache_post($post_id) {
-	global $batcache_group;
+	global $batcache;
 
 	$permalink = get_permalink($post_id);
 	if ( empty($permalink) )
@@ -40,6 +30,8 @@ function batcache_post($post_id) {
 
 	$url_key = md5($permalink);
 
-	wp_cache_add("{$url_key}_version", 0, $batcache_group);
-	$version = wp_cache_incr("{$url_key}_version", 1, $batcache_group);
+	wp_cache_add("{$url_key}_version", 0, $batcache->group);
+	$version = wp_cache_incr("{$url_key}_version", 1, $batcache->group);
+//var_dump($post_id, $permalink, $batcache);
+//	var_dump( "{$url_key}_version", wp_cache_get("{$url_key}_version", $batcache->group));die;
 }

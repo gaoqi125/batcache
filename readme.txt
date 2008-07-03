@@ -2,7 +2,7 @@
 Contributors: andy
 Tags: cache, memcached, speed, performance, digg
 Requires at least: 2.0
-Tested up to: 2.5.1
+Tested up to: 2.6
 Stable tag: trunk
 
 Batcache uses Memcached to store and serve rendered pages.
