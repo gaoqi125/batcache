@@ -119,12 +119,6 @@ if ( ! include_once( ABSPATH . 'wp-content/object-cache.php' ) )
 
 wp_cache_init(); // Note: wp-settings.php calls wp_cache_init() which clobbers the object made here.
 
-// Make sure we can increment
-if ( ! method_exists( $GLOBALS['wp_object_cache'], 'incr' ) ) {
-	unset($batcache);
-	return;
-}
-
 // Now that the defaults are set, you might want to use different settings under certain conditions.
 
 /* Example: if your documents have a mobile variant (a different document served by the same URL) you must tell batcache about the variance. Otherwise you might accidentally cache the mobile version and serve it to desktop users, or vice versa.
@@ -149,6 +143,10 @@ if ( include_once( 'plugins/searchterm-highlighter.php') && referrer_has_search_
 // Disabled
 if ( $batcache->max_age < 1 )
 	return;
+
+// Make sure we can increment. If not, turn off the traffic sensor.
+if ( ! method_exists( $GLOBALS['wp_object_cache'], 'incr' ) )
+	$batcache->times = 0;
 
 // If your blog shows logged-in pages after you log out, uncomment this. (Typical CDN issue.)
 // header('Vary: Cookie');
