@@ -169,11 +169,6 @@ $batcache->key = md5(serialize($batcache->keys));
 // Generate the traffic threshold measurement key
 $batcache->req_key = $batcache->key . '_req';
 
-// Recreate the permalink from the URL
-$batcache->permalink = 'http://' . $batcache->keys['host'] . $batcache->keys['path'] . ( isset($batcache->keys['query']['p']) ? "?p=" . $batcache->keys['query']['p'] : '' );
-$batcache->url_key = md5($batcache->permalink);
-$batcache->url_version = wp_cache_get("{$batcache->url_key}_version", $batcache->group);
-
 // Get the batcache
 $batcache->cache = wp_cache_get($batcache->key, $batcache->group);
 
@@ -194,11 +189,18 @@ if ( $batcache->seconds < 1 || $batcache->times < 2 ) {
 }
 
 // If the document has been updated and we are the first to notice, update it.
-if ( isset($batcache->cache['version']) && $batcache->cache['version'] != $batcache->url_version ) {
-	wp_cache_add("{$batcache->url_key}_genlock", 0, $batcache->group);
-	$batcache->gen_lock = wp_cache_incr("{$batcache->url_key}_genlock", 1, $batcache->group);
-	if ( !isset( $batcache->do ) )
-		$batcache->do = true;
+if ( isset($batcache->cache['version']) ) {
+	// Recreate the permalink from the URL
+	$batcache->permalink = 'http://' . $batcache->keys['host'] . $batcache->keys['path'] . ( isset($batcache->keys['query']['p']) ? "?p=" . $batcache->keys['query']['p'] : '' );
+	$batcache->url_key = md5($batcache->permalink);
+	$batcache->url_version = wp_cache_get("{$batcache->url_key}_version", $batcache->group);
+
+	if ( $batcache->cache['version'] != $batcache->url_version ) {
+		wp_cache_add("{$batcache->url_key}_genlock", 0, $batcache->group);
+		$batcache->gen_lock = wp_cache_incr("{$batcache->url_key}_genlock", 1, $batcache->group);
+		if ( !isset( $batcache->do ) )
+			$batcache->do = true;
+	}
 }
 
 // Did we find a batcached page that hasn't expired?
