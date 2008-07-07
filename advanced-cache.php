@@ -19,6 +19,11 @@ class batcache {
 	
 	var $debug   = true; // Set false to hide the batcache info <!-- comment -->
 
+	function batcache( $settings ) {
+		if ( is_array( $settings ) ) foreach ( $settings as $k => $v )
+			$this->$k = $v;
+	}
+
 	function status_header( $status_header ) {
 		$this->status_header = $status_header;
 
@@ -86,7 +91,9 @@ class batcache {
 		return $output;
 	}
 }
-$batcache = new batcache();
+global $batcache;
+// Pass in the global variable which may be an array of settings to override defaults.
+$batcache = new batcache($batcache);
 
 if ( ! defined( 'ABSPATH' ) )
 	return;
