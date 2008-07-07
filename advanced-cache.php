@@ -67,10 +67,11 @@ class batcache {
 			'output' => $output,
 			'time' => time(),
 			'timer' => $this->timer_stop(false, 3),
-			'headers' => apache_response_headers(),
 			'status_header' => $this->status_header,
 			'version' => $this->url_version
 		);
+		if ( function_exists( 'apache_response_headers' ) )
+			$cache['headers'] = apache_response_headers();
 		wp_cache_set($this->key, $cache, $this->group, $this->max_age + $this->seconds + 30);
 
 		// Unlock regeneration
