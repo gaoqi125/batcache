@@ -19,6 +19,12 @@ class batcache {
 	
 	var $debug   = true; // Set false to hide the batcache info <!-- comment -->
 
+	function status_header( $status_header ) {
+		$this->status_header = $status_header;
+
+		return $status_header;
+	}
+
 	function configure_groups() {
 		// Configure the memcached client
 		if ( ! $this->remote )
@@ -57,6 +63,7 @@ class batcache {
 			'time' => time(),
 			'timer' => $this->timer_stop(false, 3),
 			'headers' => apache_response_headers(),
+			'status_header' => $this->status_header,
 			'version' => $this->url_version
 		);
 		wp_cache_set($this->key, $cache, $this->group, $this->max_age + $this->seconds + 30);
@@ -113,8 +120,10 @@ if ( ! include_once( ABSPATH . 'wp-content/object-cache.php' ) )
 wp_cache_init(); // Note: wp-settings.php calls wp_cache_init() which clobbers the object made here.
 
 // Make sure we can increment
-if ( ! method_exists( $GLOBALS['wp_object_cache'], 'incr' ) )
-	unset( $batcache );
+if ( ! method_exists( $GLOBALS['wp_object_cache'], 'incr' ) ) {
+	unset($batcache);
+	return;
+}
 
 // Now that the defaults are set, you might want to use different settings under certain conditions.
 
@@ -223,6 +232,9 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 	if ( !empty($batcache->headers) ) foreach ( $batcache->headers as $k => $v )
 		header("$k: $v", 1);
 
+	if ( !empty($batcache->cache['status_header']) )
+		header($batcache->cache['status_header']);
+
 	// Have you ever heard a death rattle before?
 	die($output);
 }
@@ -231,6 +243,9 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 if ( !$batcache->do )
 	return;
 
+$wp_filter['status_header'][10]['batcache'] = array( 'function' => array(&$batcache, 'status_header'), 'accepted_args' => 1 );
+
 ob_start(array(&$batcache, 'ob'));
 
 // It is safer to omit the final PHP closing tag.
+
