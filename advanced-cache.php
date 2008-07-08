@@ -77,7 +77,15 @@ class batcache {
 		// Unlock regeneration
 		wp_cache_delete("{$this->url_key}_genlock", $this->group);
 
-		header('Last-Modified: ' . date('r', $cache['time']), 1);
+		header('Last-Modified: ' . date('r', $cache['time']), true);
+		header("Cache-Control: max-age=$this->max_age, must-revalidate", false);
+
+		if ( !empty($this->headers) ) foreach ( $this->headers as $k => $v ) {
+			if ( is_array( $v ) )
+				header("{$v[0]}: {$v[1]}", false);
+			else
+				header("$k: $v", true);
+		}
 
 		// Add some debug info just before </head>
 		if ( $this->debug ) {
@@ -86,8 +94,6 @@ class batcache {
 				$tag = "<!--\n\tgenerated in " . $cache['timer'] . " seconds\n\t" . strlen(serialize($cache)) . " bytes batcached for " . $this->max_age . " seconds\n\t$this->key\n-->\n";
 				$output = substr($output, 0, $tag_position) . $tag . substr($output, $tag_position);
 			}
-		} else {
-			$output = $cache['output'];
 		}
 
 		// Pass output to next ob handler
@@ -219,13 +225,14 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 	if ( isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ) {
 		$since = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
 		if ( $batcache->cache['time'] == $since ) {
-			header('Last-Modified: ' . $_SERVER['HTTP_IF_MODIFIED_SINCE'], 1, 304);
+			header('Last-Modified: ' . $_SERVER['HTTP_IF_MODIFIED_SINCE'], true, 304);
 			exit;
 		}
 	}
 
 	// Use the batcache save time for Last-Modified so we can issue "304 Not Modified"
-	header('Last-Modified: ' . date('r', $batcache->cache['time']), 1);
+	header('Last-Modified: ' . date('r', $batcache->cache['time']), true);
+	header('Cache-Control: max-age=' . (time() - $batcache->cache['time']) . ', must-revalidate', true);
 
 	// Add some debug info just before </head>
 	if ( $batcache->debug ) {
@@ -237,13 +244,17 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 	}
 
 	if ( !empty($batcache->cache['headers']) ) foreach ( $batcache->cache['headers'] as $k => $v )
-		header("$k: $v", 1);
+		header("$k: $v", true);
 
-	if ( !empty($batcache->headers) ) foreach ( $batcache->headers as $k => $v )
-		header("$k: $v", 1);
+	if ( !empty($batcache->headers) ) foreach ( $batcache->headers as $k => $v ) {
+		if ( is_array( $v ) )
+			header("{$v[0]}: {$v[1]}", false);
+		else
+			header("$k: $v", true);
+	}
 
 	if ( !empty($batcache->cache['status_header']) )
-		header($batcache->cache['status_header']);
+		header($batcache->cache['status_header'], true);
 
 	// Have you ever heard a death rattle before?
 	die($batcache->cache['output']);
