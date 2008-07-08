@@ -232,7 +232,7 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 
 	// Use the batcache save time for Last-Modified so we can issue "304 Not Modified"
 	header('Last-Modified: ' . date('r', $batcache->cache['time']), true);
-	header('Cache-Control: max-age=' . (time() - $batcache->cache['time']) . ', must-revalidate', true);
+	header('Cache-Control: max-age=' . ($batcache->max_age - time() + $batcache->cache['time']) . ', must-revalidate', true);
 
 	// Add some debug info just before </head>
 	if ( $batcache->debug ) {
