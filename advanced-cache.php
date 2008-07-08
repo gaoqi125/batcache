@@ -82,8 +82,10 @@ class batcache {
 		// Add some debug info just before </head>
 		if ( $this->debug ) {
 			$tag = "<!--\n\tgenerated in " . $cache['timer'] . " seconds\n\t" . strlen(serialize($cache)) . " bytes batcached for " . $this->max_age . " seconds\n\t$this->key\n-->\n";
-			$tag_position = strpos($output, '</head>');
-			$output = substr($output, 0, $tag_position) . $tag . substr($output, $tag_position);
+			if ( false !== $tag_position = strpos($output, '</head>') ) {
+				$tag = "<!--\n\tgenerated in " . $cache['timer'] . " seconds\n\t" . strlen(serialize($cache)) . " bytes batcached for " . $this->max_age . " seconds\n\t$this->key\n-->\n";
+				$output = substr($output, 0, $tag_position) . $tag . substr($output, $tag_position);
+			}
 		} else {
 			$output = $cache['output'];
 		}
@@ -228,8 +230,10 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 	// Add some debug info just before </head>
 	if ( $batcache->debug ) {
 		$tag = "<!--\n\tgenerated " . (time() - $batcache->cache['time']) . " seconds ago\n\tgenerated in " . $batcache->cache['timer'] . " seconds\n\tserved from batcache in " . $batcache->timer_stop(false, 3) . " seconds\n\texpires in " . ($batcache->max_age - time() + $batcache->cache['time']) . " seconds\n-->\n";
-		$tag_position = strpos($batcache->cache['output'], '</head>');
-		$output = substr($batcache->cache['output'], 0, $tag_position) . $tag . substr($batcache->cache['output'], $tag_position);
+		if ( false !== $tag_position = strpos($batcache->cache['output'], '</head>') ) {
+			$tag = "<!--\n\tgenerated " . (time() - $batcache->cache['time']) . " seconds ago\n\tgenerated in " . $batcache->cache['timer'] . " seconds\n\tserved from batcache in " . $batcache->timer_stop(false, 3) . " seconds\n\texpires in " . ($batcache->max_age - time() + $batcache->cache['time']) . " seconds\n-->\n";
+			$output = substr($batcache->cache['output'], 0, $tag_position) . $tag . substr($batcache->cache['output'], $tag_position);
+		}
 	} else {
 		$output = $batcache->cache['output'];
 	}
