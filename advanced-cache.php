@@ -232,10 +232,8 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 		$tag = "<!--\n\tgenerated " . (time() - $batcache->cache['time']) . " seconds ago\n\tgenerated in " . $batcache->cache['timer'] . " seconds\n\tserved from batcache in " . $batcache->timer_stop(false, 3) . " seconds\n\texpires in " . ($batcache->max_age - time() + $batcache->cache['time']) . " seconds\n-->\n";
 		if ( false !== $tag_position = strpos($batcache->cache['output'], '</head>') ) {
 			$tag = "<!--\n\tgenerated " . (time() - $batcache->cache['time']) . " seconds ago\n\tgenerated in " . $batcache->cache['timer'] . " seconds\n\tserved from batcache in " . $batcache->timer_stop(false, 3) . " seconds\n\texpires in " . ($batcache->max_age - time() + $batcache->cache['time']) . " seconds\n-->\n";
-			$output = substr($batcache->cache['output'], 0, $tag_position) . $tag . substr($batcache->cache['output'], $tag_position);
+			$batcache->cache['output'] = substr($batcache->cache['output'], 0, $tag_position) . $tag . substr($batcache->cache['output'], $tag_position);
 		}
-	} else {
-		$output = $batcache->cache['output'];
 	}
 
 	if ( !empty($batcache->cache['headers']) ) foreach ( $batcache->cache['headers'] as $k => $v )
@@ -248,7 +246,7 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 		header($batcache->cache['status_header']);
 
 	// Have you ever heard a death rattle before?
-	die($output);
+	die($batcache->cache['output']);
 }
 
 // Didn't meet the minimum condition?
