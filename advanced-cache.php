@@ -158,8 +158,8 @@ if ( $batcache->max_age < 1 )
 if ( ! method_exists( $GLOBALS['wp_object_cache'], 'incr' ) )
 	$batcache->times = 0;
 
-// If your blog shows logged-in pages after you log out, uncomment this. (Typical CDN issue.)
-// header('Vary: Cookie');
+// Necessary to prevent clients using cached version after login cookies set. If this is a problem, comment it out and remove all Last-Modified headers.
+header('Vary: Cookie');
 
 // Things that define a unique page.
 if ( isset( $_SERVER['QUERY_STRING'] ) )
