@@ -19,6 +19,8 @@ class batcache {
 	
 	var $debug   = true; // Set false to hide the batcache info <!-- comment -->
 
+	var $cache_control = true; // Set false to disable Last-Modified and Cache-Control headers
+
 	function batcache( $settings ) {
 		if ( is_array( $settings ) ) foreach ( $settings as $k => $v )
 			$this->$k = $v;
@@ -77,8 +79,10 @@ class batcache {
 		// Unlock regeneration
 		wp_cache_delete("{$this->url_key}_genlock", $this->group);
 
-		header('Last-Modified: ' . date('r', $cache['time']), true);
-		header("Cache-Control: max-age=$this->max_age, must-revalidate", false);
+		if ( $this->cache_control ) {
+			header('Last-Modified: ' . date('r', $cache['time']), true);
+			header("Cache-Control: max-age=$this->max_age, must-revalidate", false);
+		}
 
 		if ( !empty($this->headers) ) foreach ( $this->headers as $k => $v ) {
 			if ( is_array( $v ) )
@@ -222,7 +226,7 @@ if ( isset($batcache->cache['version']) ) {
 // Did we find a batcached page that hasn't expired?
 if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $batcache->cache['time'] + $batcache->max_age ) {
 	// Issue "304 Not Modified" only if the dates match exactly.
-	if ( isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ) {
+	if ( $batcache->cache_control && isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ) {
 		$since = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
 		if ( $batcache->cache['time'] == $since ) {
 			header('Last-Modified: ' . $_SERVER['HTTP_IF_MODIFIED_SINCE'], true, 304);
@@ -231,8 +235,10 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 	}
 
 	// Use the batcache save time for Last-Modified so we can issue "304 Not Modified"
-	header('Last-Modified: ' . date('r', $batcache->cache['time']), true);
-	header('Cache-Control: max-age=' . ($batcache->max_age - time() + $batcache->cache['time']) . ', must-revalidate', true);
+	if ( $batcache->cache_control ) {
+		header('Last-Modified: ' . date('r', $batcache->cache['time']), true);
+		header('Cache-Control: max-age=' . ($batcache->max_age - time() + $batcache->cache['time']) . ', must-revalidate', true);
+	}
 
 	// Add some debug info just before </head>
 	if ( $batcache->debug ) {
