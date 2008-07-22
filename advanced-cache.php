@@ -16,7 +16,9 @@ class batcache {
 	var $unique  = array(); // If you conditionally serve different content, put the variable values here.
 	
 	var $headers = array(); // Add headers here. These will be sent with every response from the cache.
-	
+
+	var $uncached_headers = array('transfer-encoding'); // These headers will never be cached. Apply strtolower.
+
 	var $debug   = true; // Set false to hide the batcache info <!-- comment -->
 
 	var $cache_control = true; // Set false to disable Last-Modified and Cache-Control headers
@@ -72,8 +74,15 @@ class batcache {
 			'status_header' => $this->status_header,
 			'version' => $this->url_version
 		);
-		if ( function_exists( 'apache_response_headers' ) )
+
+		if ( function_exists( 'apache_response_headers' ) ) {
 			$cache['headers'] = apache_response_headers();
+			if ( !empty( $this->uncached_headers ) ) foreach ( $cache['headers'] as $header => $value ) {
+				if ( in_array( strtolower( $header ), $this->uncached_headers ) )
+					unset( $cache['headers'][$header] );
+			}
+		}
+
 		wp_cache_set($this->key, $cache, $this->group, $this->max_age + $this->seconds + 30);
 
 		// Unlock regeneration
@@ -242,7 +251,6 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 
 	// Add some debug info just before </head>
 	if ( $batcache->debug ) {
-		$tag = "<!--\n\tgenerated " . (time() - $batcache->cache['time']) . " seconds ago\n\tgenerated in " . $batcache->cache['timer'] . " seconds\n\tserved from batcache in " . $batcache->timer_stop(false, 3) . " seconds\n\texpires in " . ($batcache->max_age - time() + $batcache->cache['time']) . " seconds\n-->\n";
 		if ( false !== $tag_position = strpos($batcache->cache['output'], '</head>') ) {
 			$tag = "<!--\n\tgenerated " . (time() - $batcache->cache['time']) . " seconds ago\n\tgenerated in " . $batcache->cache['timer'] . " seconds\n\tserved from batcache in " . $batcache->timer_stop(false, 3) . " seconds\n\texpires in " . ($batcache->max_age - time() + $batcache->cache['time']) . " seconds\n-->\n";
 			$batcache->cache['output'] = substr($batcache->cache['output'], 0, $tag_position) . $tag . substr($batcache->cache['output'], $tag_position);
