@@ -102,9 +102,9 @@ class batcache {
 
 		// Add some debug info just before </head>
 		if ( $this->debug ) {
-			$tag = "<!--\n\tgenerated in " . $cache['timer'] . " seconds\n\t" . strlen(serialize($cache)) . " bytes batcached for " . $this->max_age . " seconds\n\t$this->key\n-->\n";
+			$tag = "<!--\n\tgenerated in " . $cache['timer'] . " seconds\n\t" . strlen(serialize($cache)) . " bytes batcached for " . $this->max_age . " seconds\n-->\n";
 			if ( false !== $tag_position = strpos($output, '</head>') ) {
-				$tag = "<!--\n\tgenerated in " . $cache['timer'] . " seconds\n\t" . strlen(serialize($cache)) . " bytes batcached for " . $this->max_age . " seconds\n\t$this->key\n-->\n";
+				$tag = "<!--\n\tgenerated in " . $cache['timer'] . " seconds\n\t" . strlen(serialize($cache)) . " bytes batcached for " . $this->max_age . " seconds\n-->\n";
 				$output = substr($output, 0, $tag_position) . $tag . substr($output, $tag_position);
 			}
 		}
@@ -217,23 +217,17 @@ if ( $batcache->seconds < 1 || $batcache->times < 2 ) {
 	}
 }
 
-// If the document has been updated and we are the first to notice, update it.
-if ( isset($batcache->cache['version']) ) {
-	// Recreate the permalink from the URL
-	$batcache->permalink = 'http://' . $batcache->keys['host'] . $batcache->keys['path'] . ( isset($batcache->keys['query']['p']) ? "?p=" . $batcache->keys['query']['p'] : '' );
-	$batcache->url_key = md5($batcache->permalink);
-	$batcache->url_version = wp_cache_get("{$batcache->url_key}_version", $batcache->group);
+// Recreate the permalink from the URL
+$batcache->permalink = 'http://' . $batcache->keys['host'] . $batcache->keys['path'] . ( isset($batcache->keys['query']['p']) ? "?p=" . $batcache->keys['query']['p'] : '' );
+$batcache->url_key = md5($batcache->permalink);
+$batcache->url_version = (int) wp_cache_get("{$batcache->url_key}_version", $batcache->group);
 
-	if ( $batcache->cache['version'] != $batcache->url_version ) {
-		wp_cache_add("{$batcache->url_key}_genlock", 0, $batcache->group);
-		$batcache->gen_lock = wp_cache_incr("{$batcache->url_key}_genlock", 1, $batcache->group);
-		if ( !isset( $batcache->do ) )
-			$batcache->do = true;
-	}
-}
+// If the document has been updated and we are the first to notice, regenerate it.
+if ( $batcache->do !== false && isset($batcache->cache['version']) && $batcache->cache['version'] != $batcache->url_version )
+	$batcache->genlock = wp_cache_add("{$batcache->url_key}_genlock", 1, $batcache->group);
 
 // Did we find a batcached page that hasn't expired?
-if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $batcache->cache['time'] + $batcache->max_age ) {
+if ( isset($batcache->cache['time']) && ! $batcache->genlock && time() < $batcache->cache['time'] + $batcache->max_age ) {
 	// Issue "304 Not Modified" only if the dates match exactly.
 	if ( $batcache->cache_control && isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ) {
 		$since = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
@@ -275,7 +269,7 @@ if ( isset($batcache->cache['time']) && $batcache->gen_lock != 1 && time() < $ba
 }
 
 // Didn't meet the minimum condition?
-if ( !$batcache->do )
+if ( !$batcache->do && !$batcache->genlock )
 	return;
 
 $wp_filter['status_header'][10]['batcache'] = array( 'function' => array(&$batcache, 'status_header'), 'accepted_args' => 1 );

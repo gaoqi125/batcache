@@ -24,14 +24,21 @@ add_action('clean_post_cache', 'batcache_post');
 function batcache_post($post_id) {
 	global $batcache;
 
-	$permalink = get_permalink($post_id);
-	if ( empty($permalink) )
-		return false;
+	$post = get_post($post_id);
+	if ( $post->post_type == 'revision' )
+		return;
 
-	$url_key = md5($permalink);
-
-	wp_cache_add("{$url_key}_version", 0, $batcache->group);
-	$version = wp_cache_incr("{$url_key}_version", 1, $batcache->group);
-//var_dump($post_id, $permalink, $batcache);
-//	var_dump( "{$url_key}_version", wp_cache_get("{$url_key}_version", $batcache->group));die;
+	batcache_clear_url( get_option('home') );
+	batcache_clear_url( trailingslashit( get_option('home') ) );
+	batcache_clear_url( get_permalink($post_id) );
 }
+
+function batcache_clear_url($url) {
+	global $batcache;
+	if ( empty($url) )
+		return false;
+	$url_key = md5($url);
+	wp_cache_add("{$url_key}_version", 0, $batcache->group);
+	return wp_cache_incr("{$url_key}_version", 1, $batcache->group);
+}
+
