@@ -117,7 +117,7 @@ global $batcache;
 // Pass in the global variable which may be an array of settings to override defaults.
 $batcache = new batcache($batcache);
 
-if ( ! defined( 'ABSPATH' ) )
+if ( ! defined( 'WP_CONTENT_DIR' ) )
 	return;
 
 // Never batcache interactive scripts or API endpoints.
@@ -143,7 +143,7 @@ if ( is_array( $_COOKIE) && ! empty( $_COOKIE ) )
 		if ( substr( $batcache->cookie, 0, 2 ) == 'wp' || substr( $batcache->cookie, 0, 9 ) == 'wordpress' || substr( $batcache->cookie, 0, 14 ) == 'comment_author' )
 			return;
 
-if ( ! include_once( ABSPATH . 'wp-content/object-cache.php' ) )
+if ( ! include_once( WP_CONTENT_DIR . '/object-cache.php' ) )
 	return;
 
 wp_cache_init(); // Note: wp-settings.php calls wp_cache_init() which clobbers the object made here.
