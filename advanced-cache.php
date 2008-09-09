@@ -223,7 +223,7 @@ $batcache->url_key = md5($batcache->permalink);
 $batcache->url_version = (int) wp_cache_get("{$batcache->url_key}_version", $batcache->group);
 
 // If the document has been updated and we are the first to notice, regenerate it.
-if ( $batcache->do !== false && isset($batcache->cache['version']) && $batcache->cache['version'] != $batcache->url_version )
+if ( $batcache->do !== false && isset($batcache->cache['version']) && $batcache->cache['version'] < $batcache->url_version )
 	$batcache->genlock = wp_cache_add("{$batcache->url_key}_genlock", 1, $batcache->group);
 
 // Did we find a batcached page that hasn't expired?
