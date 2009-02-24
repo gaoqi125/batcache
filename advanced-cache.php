@@ -58,6 +58,9 @@ class batcache {
 	}
 
 	function ob($output) {
+		// PHP5 and objects disappearing before output buffers?
+		wp_cache_init();
+
 		// Remember, $wp_object_cache was clobbered in wp-settings.php so we have to repeat this.
 		$this->configure_groups();
 
@@ -147,6 +150,9 @@ if ( ! include_once( WP_CONTENT_DIR . '/object-cache.php' ) )
 	return;
 
 wp_cache_init(); // Note: wp-settings.php calls wp_cache_init() which clobbers the object made here.
+
+if ( ! is_object( $wp_object_cache ) )
+	return;
 
 // Now that the defaults are set, you might want to use different settings under certain conditions.
 
