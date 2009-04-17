@@ -2,6 +2,13 @@
 
 // nananananananananananananananana BATCACHE!!!
 
+function batcache_cancel() {
+	global $batcache;
+
+	if ( is_object($batcache) )
+		$batcache->cancel = true;
+}
+
 class batcache {
 	// This is the base configuration. You can edit these variables or move them into your wp-config.php file.
 	var $max_age =  300; // Expire batcache items aged this many seconds (zero to disable batcache)
@@ -22,6 +29,8 @@ class batcache {
 	var $debug   = true; // Set false to hide the batcache info <!-- comment -->
 
 	var $cache_control = true; // Set false to disable Last-Modified and Cache-Control headers
+
+	var $cancel = false; // Change this to cancel the output buffer. Use batcache_cancel();
 
 	function batcache( $settings ) {
 		if ( is_array( $settings ) ) foreach ( $settings as $k => $v )
@@ -58,6 +67,9 @@ class batcache {
 	}
 
 	function ob($output) {
+		if ( $this->cancel !== false )
+			return $output;
+
 		// PHP5 and objects disappearing before output buffers?
 		wp_cache_init();
 
