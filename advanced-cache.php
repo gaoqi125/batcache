@@ -24,6 +24,10 @@ class batcache {
 	
 	var $headers = array(); // Add headers here. These will be sent with every response from the cache.
 
+	var $cache_redirects = false; // Set true to enable redirect caching.
+	var $redirect_status = false; // This is set to the response code during a redirect.
+	var $redirect_location = false; // This is set to the redirect location.
+
 	var $uncached_headers = array('transfer-encoding'); // These headers will never be cached. Apply strtolower.
 
 	var $debug   = true; // Set false to hide the batcache info <!-- comment -->
@@ -41,6 +45,15 @@ class batcache {
 		$this->status_header = $status_header;
 
 		return $status_header;
+	}
+
+	function redirect_status( $status, $location ) {
+		if ( $this->cache_redirects ) {
+			$this->redirect_status = $status;
+			$this->redirect_location = $location;
+		}
+
+		return $status;
 	}
 
 	function configure_groups() {
@@ -76,9 +89,9 @@ class batcache {
 		// Remember, $wp_object_cache was clobbered in wp-settings.php so we have to repeat this.
 		$this->configure_groups();
 
-		// Do not batcache blank pages (usually they are HTTP redirects)
+		// Do not batcache blank pages unless they are HTTP redirects
 		$output = trim($output);
-		if ( $output === '' )
+		if ( $output === '' && (!$this->redirect_status || !$this->redirect_location) )
 			return;
 
 		// Construct and save the batcache
@@ -87,6 +100,8 @@ class batcache {
 			'time' => time(),
 			'timer' => $this->timer_stop(false, 3),
 			'status_header' => $this->status_header,
+			'redirect_status' => $this->redirect_status,
+			'redirect_location' => $this->redirect_location,
 			'version' => $this->url_version
 		);
 
@@ -246,6 +261,39 @@ if ( $batcache->do !== false && isset($batcache->cache['version']) && $batcache-
 
 // Did we find a batcached page that hasn't expired?
 if ( isset($batcache->cache['time']) && ! $batcache->genlock && time() < $batcache->cache['time'] + $batcache->max_age ) {
+	// Issue redirect if cached and enabled
+	if ( $batcache->cache['redirect_status'] && $batcache->cache['redirect_location'] && $batcache->cache_redirects ) {
+		$status = $batcache->cache['redirect_status'];
+		$location = $batcache->cache['redirect_location'];
+		// From vars.php
+		$is_IIS = (strpos($_SERVER['SERVER_SOFTWARE'], 'Microsoft-IIS') !== false || strpos($_SERVER['SERVER_SOFTWARE'], 'ExpressionDevServer') !== false);
+		if ( $is_IIS ) {
+			header("Refresh: 0;url=$location");
+		} else {
+			if ( php_sapi_name() != 'cgi-fcgi' ) {
+				$texts = array(
+					300 => 'Multiple Choices',
+					301 => 'Moved Permanently',
+					302 => 'Found',
+					303 => 'See Other',
+					304 => 'Not Modified',
+					305 => 'Use Proxy',
+					306 => 'Reserved',
+					307 => 'Temporary Redirect',
+				);
+				$protocol = $_SERVER["SERVER_PROTOCOL"];
+				if ( 'HTTP/1.1' != $protocol && 'HTTP/1.0' != $protocol )
+					$protocol = 'HTTP/1.0';
+				if ( isset($texts[$status]) )
+					header("$protocol $status " . $texts[$status]);
+				else
+					header("$protocol 302 Found");
+			}
+			header("Location: $location");
+		}
+		exit;
+	}
+
 	// Issue "304 Not Modified" only if the dates match exactly.
 	if ( $batcache->cache_control && isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ) {
 		$since = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
@@ -291,6 +339,7 @@ if ( !$batcache->do && !$batcache->genlock )
 	return;
 
 $wp_filter['status_header'][10]['batcache'] = array( 'function' => array(&$batcache, 'status_header'), 'accepted_args' => 1 );
+$wp_filter['wp_redirect_status'][10]['batcache'] = array( 'function' => array(&$batcache, 'redirect_status'), 'accepted_args' => 2 );
 
 ob_start(array(&$batcache, 'ob'));
 

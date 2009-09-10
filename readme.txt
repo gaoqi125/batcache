@@ -9,7 +9,7 @@ Batcache uses Memcached to store and serve rendered pages.
 
 == Description ==
 
-Batcache uses Memcached to store and serve rendered pages. It's not as fast as Donncha's WP-Super-Cache but it can be used where file-based caching is not practical or not desired.
+Batcache uses Memcached to store and serve rendered pages. It can also optionally cache redirects. It's not as fast as Donncha's WP-Super-Cache but it can be used where file-based caching is not practical or not desired. For instance, any site that is run on more than one server should use Batcache because it allows all servers to use the same storage.
 
 Development testing showed a 40x reduction in page generation times: pages generated in 200ms were served from the cache in 5ms. Traffic simulations with Siege demonstrate that WordPress can handle up to twenty times more traffic with Batcache installed.
 
