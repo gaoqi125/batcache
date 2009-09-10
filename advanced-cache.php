@@ -78,7 +78,7 @@ class batcache {
 
 		// Do not batcache blank pages (usually they are HTTP redirects)
 		$output = trim($output);
-		if ( empty($output) )
+		if ( $output === '' )
 			return;
 
 		// Construct and save the batcache
