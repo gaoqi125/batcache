@@ -41,6 +41,18 @@ class batcache {
 			$this->$k = $v;
 	}
 
+	function is_ssl() {
+		if ( isset($_SERVER['HTTPS']) ) {
+			if ( 'on' == strtolower($_SERVER['HTTPS']) )
+				return true;
+			if ( '1' == $_SERVER['HTTPS'] )
+				return true;
+		} elseif ( isset($_SERVER['SERVER_PORT']) && ( '443' == $_SERVER['SERVER_PORT'] ) ) {
+			return true;
+		}
+		return false;
+	}
+
 	function status_header( $status_header ) {
 		$this->status_header = $status_header;
 
@@ -222,6 +234,9 @@ $batcache->keys = array(
 	'query' => $batcache->query,
 	'extra' => $batcache->unique
 );
+
+if ( $batcache->is_ssl() )
+	$batcache->keys['ssl'] = true;
 
 $batcache->configure_groups();
 

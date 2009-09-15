@@ -1,5 +1,5 @@
 === Batcache ===
-Contributors: andy
+Contributors: andy, orensol
 Tags: cache, memcached, speed, performance, digg
 Requires at least: 2.0
 Tested up to: 2.6
