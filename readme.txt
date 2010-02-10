@@ -2,7 +2,7 @@
 Contributors: andy, orensol
 Tags: cache, memcached, speed, performance, digg
 Requires at least: 2.0
-Tested up to: 2.6
+Tested up to: 2.9
 Stable tag: 1.0
 
 Batcache uses Memcached to store and serve rendered pages.
