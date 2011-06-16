@@ -176,6 +176,7 @@ if ( in_array(
 		array(
 			'wp-app.php',
 			'xmlrpc.php',
+			'ms-files.php',
 		) ) )
 	return;
 
