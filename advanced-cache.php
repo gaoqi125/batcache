@@ -321,6 +321,8 @@ if ( isset($batcache->cache['time']) && ! $batcache->genlock && time() < $batcac
 	// Issue "304 Not Modified" only if the dates match exactly.
 	if ( $batcache->cache_control && isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ) {
 		$since = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
+		if ( isset($batcache->cache['headers']['Last-Modified']) )
+			$batcache->cache['time'] = strtotime( $batcache->cache['headers']['Last-Modified'] );
 		if ( $batcache->cache['time'] == $since ) {
 			header('Last-Modified: ' . $_SERVER['HTTP_IF_MODIFIED_SINCE'], true, 304);
 			exit;
