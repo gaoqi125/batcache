@@ -214,8 +214,10 @@ if ( $_SERVER['HTTP_HOST'] == 'do-not-batcache-me.com' )
 */
 
 /* Example: batcache everything on this host regardless of traffic level
-if ( $_SERVER['HTTP_HOST'] == 'always-batcache-me.com' )
-	return;
+if ( $_SERVER['HTTP_HOST'] == 'always-batcache-me.com' ) {
+	$batcache->max_age = 600; // Cache for 10 minutes
+	$batcache->seconds = $batcache->times = 0; // No need to wait till n number of people have accessed the page, cache instantly
+}
 */
 
 /* Example: If you sometimes serve variants dynamically (e.g. referrer search term highlighting) you probably don't want to batcache those variants. Remember this code is run very early in wp-settings.php so plugins are not yet loaded. You will get a fatal error if you try to call an undefined function. Either include your plugin now or define a test function in this file.
