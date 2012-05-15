@@ -36,6 +36,9 @@ class batcache {
 
 	var $cancel = false; // Change this to cancel the output buffer. Use batcache_cancel();
 
+	var $genlock; // Used internally
+	var $do; // Used internally
+
 	function batcache( $settings ) {
 		if ( is_array( $settings ) ) foreach ( $settings as $k => $v )
 			$this->$k = $v;
