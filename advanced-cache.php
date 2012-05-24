@@ -142,7 +142,7 @@ class batcache {
 		wp_cache_delete("{$this->url_key}_genlock", $this->group);
 
 		if ( $this->cache_control ) {
-			header('Last-Modified: ' . date('r', $cache['time']), true);
+			header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s', $cache['time'] ) . ' GMT', true );
 			header("Cache-Control: max-age=$this->max_age, must-revalidate", false);
 		}
 
@@ -336,7 +336,7 @@ if ( isset($batcache->cache['time']) && ! $batcache->genlock && time() < $batcac
 
 	// Use the batcache save time for Last-Modified so we can issue "304 Not Modified"
 	if ( $batcache->cache_control ) {
-		header('Last-Modified: ' . date('r', $batcache->cache['time']), true);
+		header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s', $batcache->cache['time'] ) . ' GMT', true );
 		header('Cache-Control: max-age=' . ($batcache->max_age - time() + $batcache->cache['time']) . ', must-revalidate', true);
 	}
 
