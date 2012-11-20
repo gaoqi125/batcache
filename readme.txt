@@ -1,9 +1,9 @@
 === Batcache ===
-Contributors: automattic, andy, orensol
-Tags: cache, memcached, speed, performance, digg
-Requires at least: 2.0
-Tested up to: 3.0.1
-Stable tag: 1.0
+Contributors: automattic, andy, orensol, markjaquith, vnsavage, batmoo, yoavf
+Tags: cache, memcache, memcached, speed, performance, load, server
+Requires at least: 3.2
+Tested up to: 3.4.2
+Stable tag: 1.1
 
 Batcache uses Memcached to store and serve rendered pages.
 
@@ -62,4 +62,5 @@ Batcache was named "supercache" when it was written. (It's still called that on 
 
 == Changelog ==
 
-* 2010-01-27 Added headers_list for caching headers sent.
+= 1.1 =
+* Many bugfixes and updates from trunk
