@@ -62,5 +62,8 @@ Batcache was named "supercache" when it was written. (It's still called that on 
 
 == Changelog ==
 
+= trunk =
+* Add REQUEST_METHOD to the cache keys. Prevents GET requests receiving bodyless HEAD responses. This change invalidates the entire cache at upgrade time.
+
 = 1.1 =
 * Many bugfixes and updates from trunk
